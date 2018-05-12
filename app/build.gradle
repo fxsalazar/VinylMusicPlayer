@@ -1,16 +1,5 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-
-    dependencies {
-        //noinspection GradleDynamicVersion
-        classpath 'com.jakewharton.hugo:hugo-plugin:1.2.1'
-    }
-}
-
 apply plugin: 'com.android.application'
-apply plugin: 'com.jakewharton.hugo'
+apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 27
@@ -19,7 +8,7 @@ android {
         enabled = true
     }
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion 27
 
         renderscriptTargetApi 27
@@ -55,11 +44,8 @@ android {
     }
 }
 
-ext {
-    supportLibVersion = '27.1.1'
-}
-
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.android.support:support-compat:$supportLibVersion"
     implementation "com.android.support:support-core-utils:$supportLibVersion"
     implementation "com.android.support:support-core-ui:$supportLibVersion"
@@ -98,7 +84,14 @@ dependencies {
         transitive = true
     }
     implementation 'com.google.code.gson:gson:2.8.2'
+    implementation "com.google.android.exoplayer:exoplayer-core:$exoPlayerVersion"
+    implementation "com.google.android.exoplayer:extension-mediasession:$exoPlayerVersion"
+    implementation "io.reactivex.rxjava2:rxjava:2.1.9"
+
     testImplementation 'junit:junit:4.12'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.7.1'
+}
+repositories {
+    mavenCentral()
 }

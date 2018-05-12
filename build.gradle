@@ -1,10 +1,16 @@
 buildscript {
+    ext {
+        supportLibVersion = '27.1.1'
+        kotlin_version = '1.2.41'
+        exoPlayerVersion = '2.8.0'
+    }
     repositories {
         jcenter()
         google()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.1.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 

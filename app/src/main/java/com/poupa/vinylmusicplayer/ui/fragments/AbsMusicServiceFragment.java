@@ -11,7 +11,7 @@ import com.poupa.vinylmusicplayer.ui.activities.base.AbsMusicServiceActivity;
 /**
  * @author Karim Abou Zeid (kabouzeid)
  */
-public class AbsMusicServiceFragment extends Fragment implements MusicServiceEventListener {
+public abstract class AbsMusicServiceFragment extends Fragment implements MusicServiceEventListener {
     private AbsMusicServiceActivity activity;
 
     @Override

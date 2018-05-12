@@ -41,7 +41,8 @@
             android:singleLine="true"
             android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
             android:textColor="@color/ate_primary_text_dark"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            tools:text="@tools:sample/lorem[4]"/>
 
         <TextView
             android:id="@+id/text"
@@ -53,7 +54,8 @@
             android:singleLine="true"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             android:textColor="@color/ate_secondary_text_dark"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            tools:text="@tools:sample/lorem[4]"/>
 
     </LinearLayout>
 
