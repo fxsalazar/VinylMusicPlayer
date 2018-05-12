@@ -1,22 +1,29 @@
 package com.poupa.vinylmusicplayer.interfaces;
 
+import android.support.annotation.CallSuper;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
+
+import java.util.List;
+
 /**
  * @author Karim Abou Zeid (kabouzeid)
  */
 public interface MusicServiceEventListener {
-    void onServiceConnected();
+//    void onServiceConnected();
+//
+//    void onServiceDisconnected();
 
-    void onServiceDisconnected();
+    void onQueueChanged(List<MediaSessionCompat.QueueItem> queue);
 
-    void onQueueChanged();
+    void onPlayingMetaChanged(MediaMetadataCompat metadata);
 
-    void onPlayingMetaChanged();
+    void onPlayStateChanged(PlaybackStateCompat state);
 
-    void onPlayStateChanged();
+    void onRepeatModeChanged(int repeatMode);
 
-    void onRepeatModeChanged();
+    void onShuffleModeChanged(int shuffleMode);
 
-    void onShuffleModeChanged();
-
-    void onMediaStoreChanged();
+//    void onMediaStoreChanged();
 }

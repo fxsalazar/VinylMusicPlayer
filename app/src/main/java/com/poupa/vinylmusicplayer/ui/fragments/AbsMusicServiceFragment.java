@@ -2,17 +2,26 @@ package com.poupa.vinylmusicplayer.ui.fragments;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v4.media.session.MediaControllerCompat;
 import android.view.View;
 
 import com.poupa.vinylmusicplayer.interfaces.MusicServiceEventListener;
 import com.poupa.vinylmusicplayer.ui.activities.base.AbsMusicServiceActivity;
+import com.simplecity.amp_library.playback.MediaManagerLifecycle;
+import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
 
 /**
  * @author Karim Abou Zeid (kabouzeid)
  */
-public abstract class AbsMusicServiceFragment extends Fragment implements MusicServiceEventListener {
+public abstract class AbsMusicServiceFragment extends Fragment implements MediaManagerLifecycle.Callback {
     private AbsMusicServiceActivity activity;
+    private MediaControllerCompat.Callback musicServiceCallback;
+    protected MediaControllerCompat mediaController;
 
     @Override
     public void onAttach(Context context) {
@@ -31,54 +40,34 @@ public abstract class AbsMusicServiceFragment extends Fragment implements MusicS
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         activity.addMusicServiceEventListener(this);
+        this.musicServiceCallback = registerMusicServiceCallback();
     }
+
+    @NonNull
+    protected abstract MediaControllerCompat.Callback registerMusicServiceCallback();
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        activity.removeMusicServiceEventListener(this);
-    }
-
-    @Override
-    public void onPlayingMetaChanged() {
-
+        mediaController.unregisterCallback(musicServiceCallback);
     }
 
     @Override
     public void onServiceConnected() {
-
+        mediaController = MediaControllerCompat.getMediaController(activity);
+        mediaController.registerCallback(musicServiceCallback);
     }
 
     @Override
-    public void onServiceDisconnected() {
-
+    public void onServiceConnectionSuspended() {
+        mediaController.unregisterCallback(musicServiceCallback);
     }
 
     @Override
-    public void onQueueChanged() {
-
-    }
-
-    @Override
-    public void onPlayStateChanged() {
-
-    }
-
-    @Override
-    public void onRepeatModeChanged() {
-
-    }
-
-    @Override
-    public void onShuffleModeChanged() {
-
-    }
-
-    @Override
-    public void onMediaStoreChanged() {
-
+    public void onServiceConnectionError(@NotNull Exception exception) {
+        // TODO: 12/05/2018 what if???
     }
 }

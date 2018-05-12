@@ -7,6 +7,9 @@ import android.animation.TimeInterpolator;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,7 +24,6 @@ import com.poupa.vinylmusicplayer.helper.MusicPlayerRemote;
 import com.poupa.vinylmusicplayer.helper.MusicProgressViewUpdateHelper;
 import com.poupa.vinylmusicplayer.helper.PlayPauseButtonOnClickHandler;
 import com.poupa.vinylmusicplayer.misc.SimpleOnSeekbarChangeListener;
-import com.poupa.vinylmusicplayer.service.MusicService;
 import com.poupa.vinylmusicplayer.ui.fragments.AbsMusicServiceFragment;
 import com.poupa.vinylmusicplayer.util.MusicUtil;
 import com.poupa.vinylmusicplayer.views.PlayPauseDrawable;
@@ -32,6 +34,8 @@ import java.util.LinkedList;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+
+import static android.support.v4.media.session.PlaybackStateCompat.*;
 
 /**
  * @author Karim Abou Zeid (kabouzeid)
@@ -82,7 +86,7 @@ public class FlatPlayerPlaybackControlsFragment extends AbsMusicServiceFragment 
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         unbinder = ButterKnife.bind(this, view);
         setUpMusicControllers();
@@ -107,27 +111,35 @@ public class FlatPlayerPlaybackControlsFragment extends AbsMusicServiceFragment 
         progressViewUpdateHelper.stop();
     }
 
+    @NonNull
     @Override
-    public void onServiceConnected() {
-        updatePlayPauseDrawableState(false);
-        updateRepeatState();
-        updateShuffleState();
+    protected MediaControllerCompat.Callback registerMusicServiceCallback() {
+        return this.mediaControllerCallback;
     }
 
-    @Override
-    public void onPlayStateChanged() {
-        updatePlayPauseDrawableState(true);
-    }
+    private MediaControllerCompat.Callback mediaControllerCallback = new MediaControllerCompat.Callback() {
+        @Override
+        public void onSessionReady() {
+            updatePlayPauseDrawableState(false);
+            updateRepeatState(REPEAT_MODE_NONE);
+            updateShuffleState(mediaController.getShuffleMode());
+        }
 
-    @Override
-    public void onRepeatModeChanged() {
-        updateRepeatState();
-    }
+        @Override
+        public void onPlaybackStateChanged(PlaybackStateCompat state) {
+            updatePlayPauseDrawableState(true);
+        }
 
-    @Override
-    public void onShuffleModeChanged() {
-        updateShuffleState();
-    }
+        @Override
+        public void onRepeatModeChanged(int repeatMode) {
+            updateRepeatState(repeatMode);
+        }
+
+        @Override
+        public void onShuffleModeChanged(int shuffleMode) {
+            updateShuffleState(mediaController.getShuffleMode());
+        }
+    };
 
     public void setDark(boolean dark) {
         if (dark) {
@@ -138,8 +150,8 @@ public class FlatPlayerPlaybackControlsFragment extends AbsMusicServiceFragment 
             lastDisabledPlaybackControlsColor = MaterialValueHelper.getPrimaryDisabledTextColor(getActivity(), false);
         }
 
-        updateRepeatState();
-        updateShuffleState();
+        updateRepeatState(mediaController.getRepeatMode());
+        updateShuffleState(mediaController.getShuffleMode());
         updatePrevNextColor();
         updatePlayPauseColor();
         updateProgressTextColor();
@@ -159,7 +171,7 @@ public class FlatPlayerPlaybackControlsFragment extends AbsMusicServiceFragment 
     }
 
     protected void updatePlayPauseDrawableState(boolean animate) {
-        if (MusicPlayerRemote.isPlaying()) {
+        if (mediaController.getPlaybackState().getState() == PlaybackStateCompat.STATE_PLAYING) {
             playPauseDrawable.setPause(animate);
         } else {
             playPauseDrawable.setPlay(animate);
@@ -199,9 +211,9 @@ public class FlatPlayerPlaybackControlsFragment extends AbsMusicServiceFragment 
         shuffleButton.setOnClickListener(v -> MusicPlayerRemote.toggleShuffleMode());
     }
 
-    private void updateShuffleState() {
-        switch (MusicPlayerRemote.getShuffleMode()) {
-            case MusicService.SHUFFLE_MODE_SHUFFLE:
+    private void updateShuffleState(@PlaybackStateCompat.ShuffleMode int shuffleMode) {
+        switch (shuffleMode) {
+            case SHUFFLE_MODE_ALL:
                 shuffleButton.setColorFilter(lastPlaybackControlsColor, PorterDuff.Mode.SRC_IN);
                 break;
             default:
@@ -214,17 +226,17 @@ public class FlatPlayerPlaybackControlsFragment extends AbsMusicServiceFragment 
         repeatButton.setOnClickListener(v -> MusicPlayerRemote.cycleRepeatMode());
     }
 
-    private void updateRepeatState() {
-        switch (MusicPlayerRemote.getRepeatMode()) {
-            case MusicService.REPEAT_MODE_NONE:
+    private void updateRepeatState(@PlaybackStateCompat.RepeatMode int repeatMode) {
+        switch (repeatMode) {
+            case REPEAT_MODE_NONE:
                 repeatButton.setImageResource(R.drawable.ic_repeat_white_24dp);
                 repeatButton.setColorFilter(lastDisabledPlaybackControlsColor, PorterDuff.Mode.SRC_IN);
                 break;
-            case MusicService.REPEAT_MODE_ALL:
+            case REPEAT_MODE_ALL:
                 repeatButton.setImageResource(R.drawable.ic_repeat_white_24dp);
                 repeatButton.setColorFilter(lastPlaybackControlsColor, PorterDuff.Mode.SRC_IN);
                 break;
-            case MusicService.REPEAT_MODE_THIS:
+            case REPEAT_MODE_ONE:
                 repeatButton.setImageResource(R.drawable.ic_repeat_one_white_24dp);
                 repeatButton.setColorFilter(lastPlaybackControlsColor, PorterDuff.Mode.SRC_IN);
                 break;

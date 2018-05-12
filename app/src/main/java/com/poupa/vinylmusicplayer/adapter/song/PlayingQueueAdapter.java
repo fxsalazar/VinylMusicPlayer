@@ -30,8 +30,8 @@ public class PlayingQueueAdapter extends SongAdapter implements DraggableItemAda
 
     private int current;
 
-    public PlayingQueueAdapter(AppCompatActivity activity, ArrayList<Song> dataSet, int current, @LayoutRes int itemLayoutRes, boolean usePalette, @Nullable CabHolder cabHolder) {
-        super(activity, dataSet, itemLayoutRes, usePalette, cabHolder);
+    public PlayingQueueAdapter(AppCompatActivity activity, ArrayList<Song> dataSet, OnItemClickListener<Song> onItemClickListener, int current, @LayoutRes int itemLayoutRes, boolean usePalette, @Nullable CabHolder cabHolder) {
+        super(activity, dataSet, onItemClickListener, itemLayoutRes, usePalette, cabHolder);
         this.current = current;
     }
 

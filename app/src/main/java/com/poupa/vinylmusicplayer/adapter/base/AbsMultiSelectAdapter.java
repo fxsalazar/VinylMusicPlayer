@@ -100,4 +100,8 @@ public abstract class AbsMultiSelectAdapter<VH extends RecyclerView.ViewHolder, 
     protected abstract I getIdentifier(int position);
 
     protected abstract void onMultipleItemAction(MenuItem menuItem, ArrayList<I> selection);
+
+    public interface OnItemClickListener<I> {
+        void onItemClick(I item);
+    }
 }

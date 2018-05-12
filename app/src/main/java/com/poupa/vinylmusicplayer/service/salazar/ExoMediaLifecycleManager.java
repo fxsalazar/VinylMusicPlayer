@@ -42,21 +42,21 @@ public final class ExoMediaLifecycleManager implements LifecycleObserver, MediaM
                     try {
                         connectToSession(mediaBrowser.getSessionToken());
                         mediaManager.setMediaControllerCompat(getMediaController());
-                        mediaManagerCallback.onMediaManagerConnected();
+                        mediaManagerCallback.onServiceConnected();
                     } catch (RemoteException e) {
                         Log.e(TAG, "could not connect media controller", e);
-                        mediaManagerCallback.onMediaManagerConnectionError(new Exception("could not connect media controller", e));
+                        mediaManagerCallback.onServiceConnectionError(new Exception("could not connect media controller", e));
                     }
                 }
 
                 @Override
                 public void onConnectionSuspended() {
-                    mediaManagerCallback.onMediaManagerConnectionSuspended();
+                    mediaManagerCallback.onServiceConnectionSuspended();
                 }
 
                 @Override
                 public void onConnectionFailed() {
-                    mediaManagerCallback.onMediaManagerConnectionError(new Exception("MediaBrowser connection FAILED"));
+                    mediaManagerCallback.onServiceConnectionError(new Exception("MediaBrowser connection FAILED"));
                 }
             };
 
@@ -107,11 +107,5 @@ public final class ExoMediaLifecycleManager implements LifecycleObserver, MediaM
         if (mediaController != null && this.mediaBrowser.isConnected()) {
             mediaController.registerCallback(this.mediaControllerCallback);
         }
-    }
-
-    @NotNull
-    @Override
-    public MediaManager getMediaManager() {
-        return this.mediaManager;
     }
 }

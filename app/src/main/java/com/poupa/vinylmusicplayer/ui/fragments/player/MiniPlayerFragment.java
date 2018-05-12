@@ -4,7 +4,11 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -58,7 +62,7 @@ public class MiniPlayerFragment extends AbsMusicServiceFragment implements Music
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         unbinder = ButterKnife.bind(this, view);
 
@@ -84,25 +88,37 @@ public class MiniPlayerFragment extends AbsMusicServiceFragment implements Music
         miniPlayerPlayPauseButton.setOnClickListener(new PlayPauseButtonOnClickHandler());
     }
 
-    private void updateSongTitle() {
-        miniPlayerTitle.setText(MusicPlayerRemote.getCurrentSong().title);
+    private void updateSongTitle(@Nullable MediaMetadataCompat metadata) {
+        miniPlayerTitle.setText(
+                metadata == null ?
+                mediaController.getMetadata().getDescription().getTitle().toString() :
+                metadata.getDescription().getTitle()
+        );
     }
 
+    @NonNull
     @Override
-    public void onServiceConnected() {
-        updateSongTitle();
-        updatePlayPauseDrawableState(false);
+    protected MediaControllerCompat.Callback registerMusicServiceCallback() {
+        return this.mediaControllerCallback;
     }
 
-    @Override
-    public void onPlayingMetaChanged() {
-        updateSongTitle();
-    }
+    private MediaControllerCompat.Callback mediaControllerCallback = new MediaControllerCompat.Callback() {
+        @Override
+        public void onSessionReady() {
+            updateSongTitle(null);
+            updatePlayPauseDrawableState(false);
+        }
 
-    @Override
-    public void onPlayStateChanged() {
-        updatePlayPauseDrawableState(true);
-    }
+        @Override
+        public void onPlaybackStateChanged(PlaybackStateCompat state) {
+            updatePlayPauseDrawableState(true);
+        }
+
+        @Override
+        public void onMetadataChanged(MediaMetadataCompat metadata) {
+            updateSongTitle(metadata);
+        }
+    };
 
     @Override
     public void onUpdateProgressViews(int progress, int total) {
@@ -151,7 +167,7 @@ public class MiniPlayerFragment extends AbsMusicServiceFragment implements Music
     }
 
     protected void updatePlayPauseDrawableState(boolean animate) {
-        if (MusicPlayerRemote.isPlaying()) {
+        if (mediaController.getPlaybackState().getState() == PlaybackStateCompat.STATE_PLAYING) {
             miniPlayerPlayPauseDrawable.setPause(animate);
         } else {
             miniPlayerPlayPauseDrawable.setPlay(animate);

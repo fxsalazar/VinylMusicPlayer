@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
+import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v7.widget.GridLayoutManager;
 
 import com.poupa.vinylmusicplayer.R;
@@ -14,6 +15,7 @@ import com.poupa.vinylmusicplayer.interfaces.LoaderIds;
 import com.poupa.vinylmusicplayer.loader.SongLoader;
 import com.poupa.vinylmusicplayer.misc.WrappedAsyncTaskLoader;
 import com.poupa.vinylmusicplayer.model.Song;
+import com.poupa.vinylmusicplayer.service.salazar.utils.MediaSessionExtensionsKt;
 import com.poupa.vinylmusicplayer.util.PreferenceUtil;
 
 import java.util.ArrayList;
@@ -51,6 +53,10 @@ public class SongsFragment extends AbsLibraryPagerRecyclerViewCustomGridSizeFrag
             return new ShuffleButtonSongAdapter(
                     getLibraryFragment().getMainActivity(),
                     dataSet,
+                    song -> {
+                        mediaController.addQueueItem(MediaSessionExtensionsKt.toMediaDescriptionCompat(song));
+                        mediaController.getTransportControls().play();
+                    },
                     itemLayoutRes,
                     usePalette,
                     getLibraryFragment());
@@ -58,6 +64,10 @@ public class SongsFragment extends AbsLibraryPagerRecyclerViewCustomGridSizeFrag
         return new SongAdapter(
                 getLibraryFragment().getMainActivity(),
                 dataSet,
+                song -> {
+                    mediaController.addQueueItem(MediaSessionExtensionsKt.toMediaDescriptionCompat(song));
+                    mediaController.getTransportControls().play();
+                },
                 itemLayoutRes,
                 usePalette,
                 getLibraryFragment());
@@ -68,10 +78,18 @@ public class SongsFragment extends AbsLibraryPagerRecyclerViewCustomGridSizeFrag
         return R.string.no_songs;
     }
 
+    @NonNull
     @Override
-    public void onMediaStoreChanged() {
-        getLoaderManager().restartLoader(LOADER_ID, null, this);
+    protected MediaControllerCompat.Callback registerMusicServiceCallback() {
+        // TODO: 12/05/2018 will be removed from here. onMediaStoreChanged should be on its own impl
+        return new MediaControllerCompat.Callback() {};
     }
+
+    // TODO: 12/05/2018 impl
+    //    @Override
+//    public void onMediaStoreChanged() {
+//        getLoaderManager().restartLoader(LOADER_ID, null, this);
+//    }
 
     @Override
     protected String loadSortOrder() {

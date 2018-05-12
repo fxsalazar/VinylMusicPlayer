@@ -9,7 +9,11 @@ import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.ColorInt;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -41,6 +45,7 @@ import com.poupa.vinylmusicplayer.helper.MusicPlayerRemote;
 import com.poupa.vinylmusicplayer.helper.menu.SongMenuHelper;
 import com.poupa.vinylmusicplayer.model.Song;
 import com.poupa.vinylmusicplayer.model.lyrics.Lyrics;
+import com.poupa.vinylmusicplayer.service.salazar.utils.MediaSessionExtensionsKt;
 import com.poupa.vinylmusicplayer.ui.activities.base.AbsSlidingMusicPanelActivity;
 import com.poupa.vinylmusicplayer.ui.fragments.player.AbsPlayerFragment;
 import com.poupa.vinylmusicplayer.ui.fragments.player.PlayerAlbumCoverFragment;
@@ -53,6 +58,9 @@ import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class FlatPlayerFragment extends AbsPlayerFragment implements PlayerAlbumCoverFragment.Callbacks, SlidingUpPanelLayout.PanelSlideListener {
     public static final String TAG = FlatPlayerFragment.class.getSimpleName();
@@ -105,7 +113,7 @@ public class FlatPlayerFragment extends AbsPlayerFragment implements PlayerAlbum
     }
 
     @Override
-    public void onViewCreated(final View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull final View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         impl.init();
@@ -169,34 +177,45 @@ public class FlatPlayerFragment extends AbsPlayerFragment implements PlayerAlbum
         checkToggleToolbar(toolbarContainer);
     }
 
+    @NonNull
     @Override
-    public void onServiceConnected() {
-        updateQueue();
-        updateCurrentSong();
-        updateIsFavorite();
-        updateLyrics();
+    protected MediaControllerCompat.Callback registerMusicServiceCallback() {
+        return this.mediaControllerCallback;
     }
 
-    @Override
-    public void onPlayingMetaChanged() {
-        updateCurrentSong();
-        updateIsFavorite();
-        updateQueuePosition();
-        updateLyrics();
-    }
+    private MediaControllerCompat.Callback mediaControllerCallback = new MediaControllerCompat.Callback() {
+        @Override
+        public void onSessionReady() {
+            updateQueue(mediaController.getQueue());
+            updateCurrentSong(mediaController.getMetadata());
+            updateIsFavorite();
+            updateLyrics();
+        }
 
-    @Override
-    public void onQueueChanged() {
-        updateQueue();
-    }
+        @Override
+        public void onMetadataChanged(MediaMetadataCompat metadata) {
+            updateCurrentSong(metadata);
+            updateIsFavorite();
+            updateQueuePosition();
+            updateLyrics();
+        }
 
-    @Override
-    public void onMediaStoreChanged() {
-        updateQueue();
-    }
+        @Override
+        public void onQueueChanged(List<MediaSessionCompat.QueueItem> queue) {
+            updateQueue(queue);
+        }
+    };
 
-    private void updateQueue() {
-        playingQueueAdapter.swapDataSet(MusicPlayerRemote.getPlayingQueue(), MusicPlayerRemote.getPosition());
+    // TODO: 12/05/2018 how this works?
+//    @Override
+//    public void onMediaStoreChanged() {
+//        updateQueue();
+//    }
+
+    private void updateQueue(@NonNull List<MediaSessionCompat.QueueItem> queue) {
+        ArrayList<Song> playingQueue = (ArrayList<Song>) MediaSessionExtensionsKt.toSong(queue);
+        // TODO: 12/05/2018 calculate position
+        playingQueueAdapter.swapDataSet(playingQueue, 0/*MusicPlayerRemote.getPosition()*/);
         playerQueueSubHeader.setText(getUpNextAndQueueTime());
         if (slidingUpPanelLayout == null || slidingUpPanelLayout.getPanelState() == SlidingUpPanelLayout.PanelState.COLLAPSED) {
             resetToCurrentPosition();
@@ -211,9 +230,8 @@ public class FlatPlayerFragment extends AbsPlayerFragment implements PlayerAlbum
         }
     }
 
-    @SuppressWarnings("ConstantConditions")
-    private void updateCurrentSong() {
-        impl.updateCurrentSong(MusicPlayerRemote.getCurrentSong());
+    private void updateCurrentSong(@NonNull MediaMetadataCompat metadata) {
+        impl.updateCurrentSong(MediaSessionExtensionsKt.toSong(metadata));
     }
 
     private void setUpSubFragments() {
@@ -250,6 +268,7 @@ public class FlatPlayerFragment extends AbsPlayerFragment implements PlayerAlbum
         playingQueueAdapter = new PlayingQueueAdapter(
                 ((AppCompatActivity) getActivity()),
                 MusicPlayerRemote.getPlayingQueue(),
+                song -> mediaController.addQueueItem(MediaSessionExtensionsKt.toMediaDescriptionCompat(song)),
                 MusicPlayerRemote.getPosition(),
                 R.layout.item_list,
                 false,
@@ -293,12 +312,12 @@ public class FlatPlayerFragment extends AbsPlayerFragment implements PlayerAlbum
                             .setTitle(isFavorite ? getString(R.string.action_remove_from_favorites) : getString(R.string.action_add_to_favorites));
                 }
             }
-        }.execute(MusicPlayerRemote.getCurrentSong());
+        }.execute(MediaSessionExtensionsKt.toSong(mediaController.getMetadata()));
     }
 
     private void updateLyrics() {
         if (updateLyricsAsyncTask != null) updateLyricsAsyncTask.cancel(false);
-        final Song song = MusicPlayerRemote.getCurrentSong();
+        final Song song = MediaSessionExtensionsKt.toSong(mediaController.getMetadata());
         updateLyricsAsyncTask = new AsyncTask<Void, Void, Lyrics>() {
             @Override
             protected void onPreExecute() {

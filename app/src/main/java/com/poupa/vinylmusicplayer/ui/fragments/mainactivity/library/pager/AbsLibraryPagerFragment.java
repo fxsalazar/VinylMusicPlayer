@@ -9,7 +9,7 @@ import com.poupa.vinylmusicplayer.ui.fragments.mainactivity.library.LibraryFragm
 /**
  * @author Karim Abou Zeid (kabouzeid)
  */
-public class AbsLibraryPagerFragment extends AbsMusicServiceFragment {
+public abstract class AbsLibraryPagerFragment extends AbsMusicServiceFragment {
 
     /* http://stackoverflow.com/a/2888433 */
     @Override

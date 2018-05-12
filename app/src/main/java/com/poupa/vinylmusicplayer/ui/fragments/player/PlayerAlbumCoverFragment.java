@@ -2,6 +2,11 @@ package com.poupa.vinylmusicplayer.ui.fragments.player;
 
 import android.animation.Animator;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.view.ViewPager;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
@@ -19,8 +24,10 @@ import com.poupa.vinylmusicplayer.adapter.AlbumCoverPagerAdapter;
 import com.poupa.vinylmusicplayer.helper.MusicPlayerRemote;
 import com.poupa.vinylmusicplayer.helper.MusicProgressViewUpdateHelper;
 import com.poupa.vinylmusicplayer.misc.SimpleAnimatorListener;
+import com.poupa.vinylmusicplayer.model.Song;
 import com.poupa.vinylmusicplayer.model.lyrics.AbsSynchronizedLyrics;
 import com.poupa.vinylmusicplayer.model.lyrics.Lyrics;
+import com.poupa.vinylmusicplayer.service.salazar.utils.MediaSessionExtensionsKt;
 import com.poupa.vinylmusicplayer.ui.fragments.AbsMusicServiceFragment;
 import com.poupa.vinylmusicplayer.util.PreferenceUtil;
 import com.poupa.vinylmusicplayer.util.ViewUtil;
@@ -28,6 +35,9 @@ import com.poupa.vinylmusicplayer.util.ViewUtil;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Karim Abou Zeid (kabouzeid)
@@ -66,7 +76,7 @@ public class PlayerAlbumCoverFragment extends AbsMusicServiceFragment implements
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         viewPager.addOnPageChangeListener(this);
         viewPager.setOnTouchListener(new View.OnTouchListener() {
@@ -98,25 +108,39 @@ public class PlayerAlbumCoverFragment extends AbsMusicServiceFragment implements
         unbinder.unbind();
     }
 
+    @NonNull
     @Override
-    public void onServiceConnected() {
-        updatePlayingQueue();
+    protected MediaControllerCompat.Callback registerMusicServiceCallback() {
+        return this.mediaControllerCallback;
     }
 
-    @Override
-    public void onPlayingMetaChanged() {
-        viewPager.setCurrentItem(MusicPlayerRemote.getPosition());
-    }
+    private MediaControllerCompat.Callback mediaControllerCallback = new MediaControllerCompat.Callback() {
+        @Override
+        public void onSessionReady() {
+            updatePlayingQueue(mediaController.getQueue());
+        }
 
-    @Override
-    public void onQueueChanged() {
-        updatePlayingQueue();
-    }
+        @Override
+        public void onMetadataChanged(MediaMetadataCompat metadata) {
+            // TODO: 12/05/2018 calculate position
+            viewPager.setCurrentItem(0/*MusicPlayerRemote.getPosition()*/);
+        }
 
-    private void updatePlayingQueue() {
-        viewPager.setAdapter(new AlbumCoverPagerAdapter(getFragmentManager(), MusicPlayerRemote.getPlayingQueue()));
-        viewPager.setCurrentItem(MusicPlayerRemote.getPosition());
-        onPageSelected(MusicPlayerRemote.getPosition());
+        @Override
+        public void onQueueChanged(List<MediaSessionCompat.QueueItem> queue) {
+            updatePlayingQueue(queue);
+        }
+    };
+
+    private void updatePlayingQueue(@NonNull List<MediaSessionCompat.QueueItem> queue) {
+        ArrayList<Song> playingQueue = new ArrayList<>();
+        for (MediaSessionCompat.QueueItem item : queue) {
+            playingQueue.add(MediaSessionExtensionsKt.toSong(item));
+        }
+        viewPager.setAdapter(new AlbumCoverPagerAdapter(getFragmentManager(), playingQueue));
+        // TODO: 12/05/2018 calculate position
+        viewPager.setCurrentItem(0 /*MusicPlayerRemote.getPosition()*/);
+        onPageSelected(0/*MusicPlayerRemote.getPosition()*/);
     }
 
     @Override

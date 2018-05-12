@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
+import android.support.v4.media.MediaMetadataCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -25,6 +26,7 @@ import com.poupa.vinylmusicplayer.loader.GenreLoader;
 import com.poupa.vinylmusicplayer.misc.WrappedAsyncTaskLoader;
 import com.poupa.vinylmusicplayer.model.Genre;
 import com.poupa.vinylmusicplayer.model.Song;
+import com.poupa.vinylmusicplayer.service.salazar.utils.MediaSessionExtensionsKt;
 import com.poupa.vinylmusicplayer.ui.activities.base.AbsSlidingMusicPanelActivity;
 import com.poupa.vinylmusicplayer.util.ViewUtil;
 import com.poupa.vinylmusicplayer.util.VinylMusicPlayerColorUtil;
@@ -84,7 +86,13 @@ public class GenreDetailActivity extends AbsSlidingMusicPanelActivity implements
         ViewUtil.setUpFastScrollRecyclerViewColor(this, ((FastScrollRecyclerView) recyclerView), ThemeStore.accentColor(this));
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        adapter = new SongAdapter(this, new ArrayList<Song>(), R.layout.item_list, false, this);
+        adapter = new SongAdapter(
+                this,
+                new ArrayList<Song>(),
+                song -> mediaController.addQueueItem(MediaSessionExtensionsKt.toMediaDescriptionCompat(song)),
+                R.layout.item_list,
+                false,
+                this);
         recyclerView.setAdapter(adapter);
 
         adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
@@ -148,7 +156,6 @@ public class GenreDetailActivity extends AbsSlidingMusicPanelActivity implements
     @Override
     public void onMediaStoreChanged() {
         super.onMediaStoreChanged();
-        getSupportLoaderManager().restartLoader(LOADER_ID, null, this);
     }
 
     private void checkIsEmpty() {

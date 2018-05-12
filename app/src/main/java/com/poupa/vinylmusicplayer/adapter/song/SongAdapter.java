@@ -42,20 +42,22 @@ public class SongAdapter extends AbsMultiSelectAdapter<SongAdapter.ViewHolder, S
 
     protected final AppCompatActivity activity;
     protected ArrayList<Song> dataSet;
+    protected OnItemClickListener<Song> onItemClickListener;
 
     protected int itemLayoutRes;
 
     protected boolean usePalette = false;
     protected boolean showSectionName = true;
 
-    public SongAdapter(AppCompatActivity activity, ArrayList<Song> dataSet, @LayoutRes int itemLayoutRes, boolean usePalette, @Nullable CabHolder cabHolder) {
-        this(activity, dataSet, itemLayoutRes, usePalette, cabHolder, true);
+    public SongAdapter(AppCompatActivity activity, ArrayList<Song> dataSet, OnItemClickListener<Song> onItemClickListener, @LayoutRes int itemLayoutRes, boolean usePalette, @Nullable CabHolder cabHolder) {
+        this(activity, dataSet, onItemClickListener, itemLayoutRes, usePalette, cabHolder, true);
     }
 
-    public SongAdapter(AppCompatActivity activity, ArrayList<Song> dataSet, @LayoutRes int itemLayoutRes, boolean usePalette, @Nullable CabHolder cabHolder, boolean showSectionName) {
+    public SongAdapter(AppCompatActivity activity, ArrayList<Song> dataSet, OnItemClickListener<Song> onItemClickListener, @LayoutRes int itemLayoutRes, boolean usePalette, @Nullable CabHolder cabHolder, boolean showSectionName) {
         super(activity, cabHolder, R.menu.menu_media_selection);
         this.activity = activity;
         this.dataSet = dataSet;
+        this.onItemClickListener = onItemClickListener;
         this.itemLayoutRes = itemLayoutRes;
         this.usePalette = usePalette;
         this.showSectionName = showSectionName;
@@ -98,6 +100,14 @@ public class SongAdapter extends AbsMultiSelectAdapter<SongAdapter.ViewHolder, S
 
         boolean isChecked = isChecked(song);
         holder.itemView.setActivated(isChecked);
+        holder.itemView.setOnClickListener(v -> {
+            if (isInQuickSelectMode()) {
+                toggleChecked(position);
+            } else {
+//                MusicPlayerRemote.openQueue(dataSet, getAdapterPosition(), true);
+                onItemClickListener.onItemClick(song);
+            }
+        });
 
         if (holder.getAdapterPosition() == getItemCount() - 1) {
             if (holder.shortSeparator != null) {

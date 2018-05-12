@@ -19,6 +19,7 @@ import com.poupa.vinylmusicplayer.dialogs.SongShareDialog;
 import com.poupa.vinylmusicplayer.helper.MusicPlayerRemote;
 import com.poupa.vinylmusicplayer.interfaces.PaletteColorHolder;
 import com.poupa.vinylmusicplayer.model.Song;
+import com.poupa.vinylmusicplayer.service.salazar.utils.MediaSessionExtensionsKt;
 import com.poupa.vinylmusicplayer.ui.activities.tageditor.AbsTagEditorActivity;
 import com.poupa.vinylmusicplayer.ui.activities.tageditor.SongTagEditorActivity;
 import com.poupa.vinylmusicplayer.ui.fragments.AbsMusicServiceFragment;
@@ -54,7 +55,7 @@ public abstract class AbsPlayerFragment extends AbsMusicServiceFragment implemen
 
     @Override
     public boolean onMenuItemClick(MenuItem item) {
-        final Song song = MusicPlayerRemote.getCurrentSong();
+        final Song song = MediaSessionExtensionsKt.toSong(mediaController.getMetadata());
         switch (item.getItemId()) {
             case R.id.action_sleep_timer:
                 new SleepTimerDialog().show(getFragmentManager(), "SET_SLEEP_TIMER");

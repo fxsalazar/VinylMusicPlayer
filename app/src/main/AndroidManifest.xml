@@ -125,6 +125,10 @@
             android:name="com.poupa.vinylmusicplayer.service.MusicService"
             android:enabled="true" />
 
+        <service
+            android:name=".service.salazar.ExoMusicService"
+            android:enabled="true" />
+
         <receiver android:name="com.poupa.vinylmusicplayer.service.MediaButtonIntentReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />

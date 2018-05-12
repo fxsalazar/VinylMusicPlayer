@@ -9,12 +9,10 @@ import com.poupa.vinylmusicplayer.service.salazar.MediaManager
  */
 interface MediaManagerLifecycle : LifecycleObserver {
     interface Callback {
-        fun onMediaManagerConnected()
+        fun onServiceConnected()
 
-        fun onMediaManagerConnectionSuspended()
+        fun onServiceConnectionSuspended()
 
-        fun onMediaManagerConnectionError(exception: Exception)
+        fun onServiceConnectionError(exception: Exception)
     }
-
-    val mediaManager : MediaManager
 }

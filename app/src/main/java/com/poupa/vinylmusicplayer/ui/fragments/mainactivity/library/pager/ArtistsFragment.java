@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
+import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v7.widget.GridLayoutManager;
 
 import com.poupa.vinylmusicplayer.R;
@@ -57,10 +58,18 @@ public class ArtistsFragment extends AbsLibraryPagerRecyclerViewCustomGridSizeFr
         return R.string.no_artists;
     }
 
+    @NonNull
     @Override
-    public void onMediaStoreChanged() {
-        getLoaderManager().restartLoader(LOADER_ID, null, this);
+    protected MediaControllerCompat.Callback registerMusicServiceCallback() {
+        // TODO: 12/05/2018 will be removed from here. onMediaStoreChanged should be on its own impl
+        return new MediaControllerCompat.Callback() {};
     }
+
+    // TODO: 12/05/2018 what is this?
+//    @Override
+//    public void onMediaStoreChanged() {
+//        getLoaderManager().restartLoader(LOADER_ID, null, this);
+//    }
 
     @Override
     protected String loadSortOrder() {

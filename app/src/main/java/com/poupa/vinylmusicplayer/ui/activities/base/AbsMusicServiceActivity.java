@@ -1,73 +1,56 @@
 package com.poupa.vinylmusicplayer.ui.activities.base;
 
 import android.Manifest;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import com.poupa.vinylmusicplayer.R;
-import com.poupa.vinylmusicplayer.helper.MusicPlayerRemote;
 import com.poupa.vinylmusicplayer.interfaces.MusicServiceEventListener;
 import com.poupa.vinylmusicplayer.service.MusicService;
+import com.poupa.vinylmusicplayer.service.salazar.ExoMediaLifecycleManager;
+import com.poupa.vinylmusicplayer.service.salazar.ExoMusicService;
+import com.simplecity.amp_library.playback.MediaManagerLifecycle;
+import org.jetbrains.annotations.NotNull;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Karim Abou Zeid (kabouzeid)
  */
-public abstract class AbsMusicServiceActivity extends AbsBaseActivity implements MusicServiceEventListener {
+public abstract class AbsMusicServiceActivity extends AbsBaseActivity implements MediaManagerLifecycle.Callback, MusicServiceEventListener {
     public static final String TAG = AbsMusicServiceActivity.class.getSimpleName();
 
-    private final ArrayList<MusicServiceEventListener> mMusicServiceEventListeners = new ArrayList<>();
+    private final ArrayList<MediaManagerLifecycle.Callback> mMusicServiceEventListeners = new ArrayList<>();
 
-    private MusicPlayerRemote.ServiceToken serviceToken;
-    private MusicStateReceiver musicStateReceiver;
-    private boolean receiverRegistered;
-
+    private ExoMediaLifecycleManager exoMediaLifecycleManager;
+    protected MediaControllerCompat mediaController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        serviceToken = MusicPlayerRemote.bindToService(this, new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-                AbsMusicServiceActivity.this.onServiceConnected();
-            }
 
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-                AbsMusicServiceActivity.this.onServiceDisconnected();
-            }
-        });
+        exoMediaLifecycleManager = new ExoMediaLifecycleManager(
+                this,
+                this,
+                ExoMusicService.class
+        );
 
         setPermissionDeniedMessage(getString(R.string.permission_external_storage_denied));
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        MusicPlayerRemote.unbindFromService(serviceToken);
-        if (receiverRegistered) {
-            unregisterReceiver(musicStateReceiver);
-            receiverRegistered = false;
-        }
-    }
-
-    public void addMusicServiceEventListener(final MusicServiceEventListener listener) {
+    public void addMusicServiceEventListener(final MediaManagerLifecycle.Callback listener) {
         if (listener != null) {
             mMusicServiceEventListeners.add(listener);
         }
     }
 
-    public void removeMusicServiceEventListener(final MusicServiceEventListener listener) {
+    public void removeMusicServiceEventListener(final MediaManagerLifecycle.Callback listener) {
         if (listener != null) {
             mMusicServiceEventListeners.remove(listener);
         }
@@ -75,23 +58,9 @@ public abstract class AbsMusicServiceActivity extends AbsBaseActivity implements
 
     @Override
     public void onServiceConnected() {
-        if (!receiverRegistered) {
-            musicStateReceiver = new MusicStateReceiver(this);
-
-            final IntentFilter filter = new IntentFilter();
-            filter.addAction(MusicService.PLAY_STATE_CHANGED);
-            filter.addAction(MusicService.SHUFFLE_MODE_CHANGED);
-            filter.addAction(MusicService.REPEAT_MODE_CHANGED);
-            filter.addAction(MusicService.META_CHANGED);
-            filter.addAction(MusicService.QUEUE_CHANGED);
-            filter.addAction(MusicService.MEDIA_STORE_CHANGED);
-
-            registerReceiver(musicStateReceiver, filter);
-
-            receiverRegistered = true;
-        }
-
-        for (MusicServiceEventListener listener : mMusicServiceEventListeners) {
+        exoMediaLifecycleManager.registerMediaControllerCallback(this.mediaControllerCallback);
+        this.mediaController = MediaControllerCompat.getMediaController(this);
+        for (MediaManagerLifecycle.Callback listener : mMusicServiceEventListeners) {
             if (listener != null) {
                 listener.onServiceConnected();
             }
@@ -99,106 +68,19 @@ public abstract class AbsMusicServiceActivity extends AbsBaseActivity implements
     }
 
     @Override
-    public void onServiceDisconnected() {
-        if (receiverRegistered) {
-            unregisterReceiver(musicStateReceiver);
-            receiverRegistered = false;
-        }
-
-        for (MusicServiceEventListener listener : mMusicServiceEventListeners) {
+    public void onServiceConnectionSuspended() {
+        for (MediaManagerLifecycle.Callback listener : mMusicServiceEventListeners) {
             if (listener != null) {
-                listener.onServiceDisconnected();
+                listener.onServiceConnectionSuspended();
             }
         }
     }
 
     @Override
-    public void onPlayingMetaChanged() {
-        for (MusicServiceEventListener listener : mMusicServiceEventListeners) {
+    public void onServiceConnectionError(@NotNull Exception exception) {
+        for (MediaManagerLifecycle.Callback listener : mMusicServiceEventListeners) {
             if (listener != null) {
-                listener.onPlayingMetaChanged();
-            }
-        }
-    }
-
-    @Override
-    public void onQueueChanged() {
-        for (MusicServiceEventListener listener : mMusicServiceEventListeners) {
-            if (listener != null) {
-                listener.onQueueChanged();
-            }
-        }
-    }
-
-    @Override
-    public void onPlayStateChanged() {
-        for (MusicServiceEventListener listener : mMusicServiceEventListeners) {
-            if (listener != null) {
-                listener.onPlayStateChanged();
-            }
-        }
-    }
-
-    @Override
-    public void onMediaStoreChanged() {
-        for (MusicServiceEventListener listener : mMusicServiceEventListeners) {
-            if (listener != null) {
-                listener.onMediaStoreChanged();
-            }
-        }
-    }
-
-    @Override
-    public void onRepeatModeChanged() {
-        for (MusicServiceEventListener listener : mMusicServiceEventListeners) {
-            if (listener != null) {
-                listener.onRepeatModeChanged();
-            }
-        }
-    }
-
-    @Override
-    public void onShuffleModeChanged() {
-        for (MusicServiceEventListener listener : mMusicServiceEventListeners) {
-            if (listener != null) {
-                listener.onShuffleModeChanged();
-            }
-        }
-    }
-
-    private static final class MusicStateReceiver extends BroadcastReceiver {
-
-        private final WeakReference<AbsMusicServiceActivity> reference;
-
-        public MusicStateReceiver(final AbsMusicServiceActivity activity) {
-            reference = new WeakReference<>(activity);
-        }
-
-        @Override
-        public void onReceive(final Context context, @NonNull final Intent intent) {
-            final String action = intent.getAction();
-            AbsMusicServiceActivity activity = reference.get();
-            if (activity != null) {
-                switch (action) {
-                    case MusicService.META_CHANGED:
-                        activity.onPlayingMetaChanged();
-                        break;
-                    case MusicService.QUEUE_CHANGED:
-                        activity.onQueueChanged();
-                        break;
-                    case MusicService.PLAY_STATE_CHANGED:
-                        activity.onPlayStateChanged();
-                        break;
-                    case MusicService.REPEAT_MODE_CHANGED:
-                        activity.onRepeatModeChanged();
-                        break;
-                    case MusicService.SHUFFLE_MODE_CHANGED:
-                        activity.onShuffleModeChanged();
-                        break;
-                    case MusicService.MEDIA_STORE_CHANGED:
-                        activity.onMediaStoreChanged();
-                        break;
-                }
+                listener.onServiceConnectionError(exception);
             }
         }
     }
@@ -215,5 +97,61 @@ public abstract class AbsMusicServiceActivity extends AbsBaseActivity implements
     @Override
     protected String[] getPermissionsToRequest() {
         return new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    }
+
+    private MediaControllerCompat.Callback mediaControllerCallback = new MediaControllerCompat.Callback() {
+        @Override
+        public void onPlaybackStateChanged(PlaybackStateCompat state) {
+            AbsMusicServiceActivity.this.onPlayStateChanged(state);
+        }
+
+        @Override
+        public void onMetadataChanged(MediaMetadataCompat metadata) {
+            AbsMusicServiceActivity.this.onPlayingMetaChanged(metadata);
+        }
+
+        @Override
+        public void onQueueChanged(List<MediaSessionCompat.QueueItem> queue) {
+             AbsMusicServiceActivity.this.onQueueChanged(queue);
+        }
+
+        @Override
+        public void onRepeatModeChanged(int repeatMode) {
+            AbsMusicServiceActivity.this.onRepeatModeChanged(repeatMode);
+        }
+
+        @Override
+        public void onShuffleModeChanged(int shuffleMode) {
+            AbsMusicServiceActivity.this.onShuffleModeChanged(shuffleMode);
+        }
+    };
+
+    @Override
+    public void onQueueChanged(List<MediaSessionCompat.QueueItem> queue) {
+
+    }
+
+    @Override
+    public void onPlayingMetaChanged(MediaMetadataCompat metadata) {
+
+    }
+
+    @Override
+    public void onPlayStateChanged(PlaybackStateCompat state) {
+
+    }
+
+    @Override
+    public void onRepeatModeChanged(int repeatMode) {
+
+    }
+
+    @Override
+    public void onShuffleModeChanged(int shuffleMode) {
+
+    }
+
+    public void onMediaStoreChanged() {
+        // TODO: 12/05/2018 impl and remove
     }
 }

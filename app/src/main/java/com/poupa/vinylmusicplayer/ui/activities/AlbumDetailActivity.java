@@ -50,6 +50,7 @@ import com.poupa.vinylmusicplayer.misc.SimpleObservableScrollViewCallbacks;
 import com.poupa.vinylmusicplayer.misc.WrappedAsyncTaskLoader;
 import com.poupa.vinylmusicplayer.model.Album;
 import com.poupa.vinylmusicplayer.model.Song;
+import com.poupa.vinylmusicplayer.service.salazar.utils.MediaSessionExtensionsKt;
 import com.poupa.vinylmusicplayer.ui.activities.base.AbsSlidingMusicPanelActivity;
 import com.poupa.vinylmusicplayer.ui.activities.tageditor.AbsTagEditorActivity;
 import com.poupa.vinylmusicplayer.ui.activities.tageditor.AlbumTagEditorActivity;
@@ -58,6 +59,7 @@ import com.poupa.vinylmusicplayer.util.NavigationUtil;
 import com.poupa.vinylmusicplayer.util.Util;
 import com.poupa.vinylmusicplayer.util.VinylMusicPlayerColorUtil;
 
+import java.nio.channels.MembershipKey;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -231,7 +233,7 @@ public class AlbumDetailActivity extends AbsSlidingMusicPanelActivity implements
     }
 
     private void setUpSongsAdapter() {
-        adapter = new AlbumSongAdapter(this, getAlbum().songs, R.layout.item_list, false, this);
+        adapter = new AlbumSongAdapter(this, getAlbum().songs, song -> mediaController.addQueueItem(MediaSessionExtensionsKt.toMediaDescriptionCompat(song)), R.layout.item_list, false, this);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 1));
         recyclerView.setAdapter(adapter);
         adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {

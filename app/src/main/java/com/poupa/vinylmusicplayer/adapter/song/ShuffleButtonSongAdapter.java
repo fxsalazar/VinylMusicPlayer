@@ -20,8 +20,8 @@ import java.util.ArrayList;
  */
 public class ShuffleButtonSongAdapter extends AbsOffsetSongAdapter {
 
-    public ShuffleButtonSongAdapter(AppCompatActivity activity, ArrayList<Song> dataSet, @LayoutRes int itemLayoutRes, boolean usePalette, @Nullable CabHolder cabHolder) {
-        super(activity, dataSet, itemLayoutRes, usePalette, cabHolder);
+    public ShuffleButtonSongAdapter(AppCompatActivity activity, ArrayList<Song> dataSet, OnItemClickListener<Song> onItemClickListener, @LayoutRes int itemLayoutRes, boolean usePalette, @Nullable CabHolder cabHolder) {
+        super(activity, dataSet, onItemClickListener, itemLayoutRes, usePalette, cabHolder);
     }
 
     @Override

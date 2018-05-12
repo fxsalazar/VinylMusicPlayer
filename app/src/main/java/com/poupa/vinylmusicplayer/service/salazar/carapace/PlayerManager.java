@@ -95,6 +95,7 @@ public class PlayerManager {
 
             }
         });
+        player.setPlayWhenReady(true);
     }
 
     private AudioManager getAudioManager(Context context){

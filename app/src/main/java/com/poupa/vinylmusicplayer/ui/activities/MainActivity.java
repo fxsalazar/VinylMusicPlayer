@@ -13,6 +13,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
+import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
 import android.view.MenuItem;
@@ -184,7 +185,7 @@ public class MainActivity extends AbsSlidingMusicPanelActivity {
         setUpNavigationView();
     }
 
-    private void updateNavigationDrawerHeader() {
+    private void updateNavigationDrawerHeader(MediaMetadataCompat metadata) {
         if (!MusicPlayerRemote.getPlayingQueue().isEmpty()) {
             Song song = MusicPlayerRemote.getCurrentSong();
             if (navigationDrawerHeader == null) {
@@ -214,15 +215,15 @@ public class MainActivity extends AbsSlidingMusicPanelActivity {
     }
 
     @Override
-    public void onPlayingMetaChanged() {
-        super.onPlayingMetaChanged();
-        updateNavigationDrawerHeader();
+    public void onPlayingMetaChanged(MediaMetadataCompat metadata) {
+        super.onPlayingMetaChanged(metadata);
+        updateNavigationDrawerHeader(metadata);
     }
 
     @Override
     public void onServiceConnected() {
         super.onServiceConnected();
-        updateNavigationDrawerHeader();
+        updateNavigationDrawerHeader(mediaController.getMetadata());
         handlePlaybackIntent(getIntent());
     }
 

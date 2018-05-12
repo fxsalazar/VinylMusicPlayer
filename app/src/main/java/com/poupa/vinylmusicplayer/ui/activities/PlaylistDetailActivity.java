@@ -34,6 +34,7 @@ import com.poupa.vinylmusicplayer.model.AbsCustomPlaylist;
 import com.poupa.vinylmusicplayer.model.Playlist;
 import com.poupa.vinylmusicplayer.model.PlaylistSong;
 import com.poupa.vinylmusicplayer.model.Song;
+import com.poupa.vinylmusicplayer.service.salazar.utils.MediaSessionExtensionsKt;
 import com.poupa.vinylmusicplayer.ui.activities.base.AbsSlidingMusicPanelActivity;
 import com.poupa.vinylmusicplayer.util.PlaylistsUtil;
 import com.poupa.vinylmusicplayer.util.ViewUtil;
@@ -98,12 +99,12 @@ public class PlaylistDetailActivity extends AbsSlidingMusicPanelActivity impleme
         ViewUtil.setUpFastScrollRecyclerViewColor(this, ((FastScrollRecyclerView) recyclerView), ThemeStore.accentColor(this));
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         if (playlist instanceof AbsCustomPlaylist) {
-            adapter = new PlaylistSongAdapter(this, new ArrayList<Song>(), R.layout.item_list, false, this);
+            adapter = new PlaylistSongAdapter(this, new ArrayList<>(), song -> mediaController.addQueueItem(MediaSessionExtensionsKt.toMediaDescriptionCompat(song)), R.layout.item_list, false, this);
             recyclerView.setAdapter(adapter);
         } else {
             recyclerViewDragDropManager = new RecyclerViewDragDropManager();
             final GeneralItemAnimator animator = new RefactoredDefaultItemAnimator();
-            adapter = new OrderablePlaylistSongAdapter(this, new ArrayList<PlaylistSong>(), R.layout.item_list, false, this, (fromPosition, toPosition) -> {
+            adapter = new OrderablePlaylistSongAdapter(this, new ArrayList<>(), item -> mediaController.addQueueItem(MediaSessionExtensionsKt.toMediaDescriptionCompat(item)) , R.layout.item_list, false, this, (fromPosition, toPosition) -> {
                 if (PlaylistsUtil.moveItem(PlaylistDetailActivity.this, playlist.id, fromPosition, toPosition)) {
                     Song song = adapter.getDataSet().remove(fromPosition);
                     adapter.getDataSet().add(toPosition, song);

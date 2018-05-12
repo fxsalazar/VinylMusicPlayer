@@ -10,7 +10,11 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.ColorInt;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -44,6 +48,7 @@ import com.poupa.vinylmusicplayer.helper.MusicPlayerRemote;
 import com.poupa.vinylmusicplayer.helper.menu.SongMenuHelper;
 import com.poupa.vinylmusicplayer.model.Song;
 import com.poupa.vinylmusicplayer.model.lyrics.Lyrics;
+import com.poupa.vinylmusicplayer.service.salazar.utils.MediaSessionExtensionsKt;
 import com.poupa.vinylmusicplayer.ui.activities.base.AbsSlidingMusicPanelActivity;
 import com.poupa.vinylmusicplayer.ui.fragments.player.AbsPlayerFragment;
 import com.poupa.vinylmusicplayer.ui.fragments.player.PlayerAlbumCoverFragment;
@@ -56,6 +61,9 @@ import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CardPlayerFragment extends AbsPlayerFragment implements PlayerAlbumCoverFragment.Callbacks, SlidingUpPanelLayout.PanelSlideListener {
     public static final String TAG = CardPlayerFragment.class.getSimpleName();
@@ -109,7 +117,7 @@ public class CardPlayerFragment extends AbsPlayerFragment implements PlayerAlbum
     }
 
     @Override
-    public void onViewCreated(final View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull final View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         impl.init();
@@ -132,6 +140,12 @@ public class CardPlayerFragment extends AbsPlayerFragment implements PlayerAlbum
 
         // for some reason the xml attribute doesn't get applied here.
         playingQueueCard.setCardBackgroundColor(ATHUtil.resolveColor(getActivity(), R.attr.cardBackgroundColor));
+    }
+
+    @NonNull
+    @Override
+    protected MediaControllerCompat.Callback registerMusicServiceCallback() {
+        return this.mediaControllerCallback;
     }
 
     @Override
@@ -174,51 +188,64 @@ public class CardPlayerFragment extends AbsPlayerFragment implements PlayerAlbum
         checkToggleToolbar(toolbarContainer);
     }
 
-    @Override
-    public void onServiceConnected() {
-        updateQueue();
-        updateCurrentSong();
-        updateIsFavorite();
-        updateLyrics();
-    }
+    private MediaControllerCompat.Callback mediaControllerCallback = new MediaControllerCompat.Callback() {
+        @Override
+        public void onSessionReady() {
+            updateQueue(null);
+            updateCurrentSong();
+            updateIsFavorite();
+            updateLyrics();
+        }
 
-    @Override
-    public void onPlayingMetaChanged() {
-        updateCurrentSong();
-        updateIsFavorite();
-        updateQueuePosition();
-        updateLyrics();
-    }
+        @Override
+        public void onMetadataChanged(MediaMetadataCompat metadata) {
+            updateCurrentSong();
+            updateIsFavorite();
+            updateQueuePosition();
+            updateLyrics();
+        }
 
-    @Override
-    public void onQueueChanged() {
-        updateQueue();
-    }
+        @Override
+        public void onQueueChanged(List<MediaSessionCompat.QueueItem> queue) {
+            updateQueue(queue);
+        }
+    };
 
-    @Override
-    public void onMediaStoreChanged() {
-        updateQueue();
-    }
+    // TODO: 12/05/2018 what is this callback for?
+//    @Override
+//    public void onMediaStoreChanged() {
+//        updateQueue();
+//    }
 
-    private void updateQueue() {
-        playingQueueAdapter.swapDataSet(MusicPlayerRemote.getPlayingQueue(), MusicPlayerRemote.getPosition());
-        playerQueueSubHeader.setText(getUpNextAndQueueTime());
+    private void updateQueue(@Nullable List<MediaSessionCompat.QueueItem> queueItems) {
+        ArrayList<Song> queue = new ArrayList<>();
+        if (queueItems == null){
+            queueItems = mediaController.getQueue();
+        }
+        for (MediaSessionCompat.QueueItem item : queueItems){
+            queue.add(MediaSessionExtensionsKt.toSong(item));
+        }
+        // TODO: 12/05/2018 calculate position
+        playingQueueAdapter.swapDataSet(queue, 0 /*MusicPlayerRemote.getPosition()*/);
+        // TODO: 12/05/2018 re-implement and uncomment
+//        playerQueueSubHeader.setText(getUpNextAndQueueTime());
         if (slidingUpPanelLayout.getPanelState() == SlidingUpPanelLayout.PanelState.COLLAPSED) {
             resetToCurrentPosition();
         }
     }
 
     private void updateQueuePosition() {
-        playingQueueAdapter.setCurrent(MusicPlayerRemote.getPosition());
-        playerQueueSubHeader.setText(getUpNextAndQueueTime());
+        // TODO: 12/05/2018 calculate position
+        playingQueueAdapter.setCurrent(0/*MusicPlayerRemote.getPosition()*/);
+        // TODO: 12/05/2018 re-implement and uncomment
+//        playerQueueSubHeader.setText(getUpNextAndQueueTime());
         if (slidingUpPanelLayout.getPanelState() == SlidingUpPanelLayout.PanelState.COLLAPSED) {
             resetToCurrentPosition();
         }
     }
 
-    @SuppressWarnings("ConstantConditions")
     private void updateCurrentSong() {
-        impl.updateCurrentSong(MusicPlayerRemote.getCurrentSong());
+        impl.updateCurrentSong(MediaSessionExtensionsKt.toSong(mediaController.getMetadata()));
     }
 
     private void setUpSubFragments() {
@@ -255,6 +282,7 @@ public class CardPlayerFragment extends AbsPlayerFragment implements PlayerAlbum
         playingQueueAdapter = new PlayingQueueAdapter(
                 ((AppCompatActivity) getActivity()),
                 MusicPlayerRemote.getPlayingQueue(),
+                song -> mediaController.addQueueItem(MediaSessionExtensionsKt.toMediaDescriptionCompat(song)),
                 MusicPlayerRemote.getPosition(),
                 R.layout.item_list,
                 false,
@@ -298,12 +326,12 @@ public class CardPlayerFragment extends AbsPlayerFragment implements PlayerAlbum
                             .setTitle(isFavorite ? getString(R.string.action_remove_from_favorites) : getString(R.string.action_add_to_favorites));
                 }
             }
-        }.execute(MusicPlayerRemote.getCurrentSong());
+        }.execute(MediaSessionExtensionsKt.toSong(mediaController.getMetadata()));
     }
 
     private void updateLyrics() {
         if (updateLyricsAsyncTask != null) updateLyricsAsyncTask.cancel(false);
-        final Song song = MusicPlayerRemote.getCurrentSong();
+        final Song song = MediaSessionExtensionsKt.toSong(mediaController.getMetadata());
         updateLyricsAsyncTask = new AsyncTask<Void, Void, Lyrics>() {
             @Override
             protected void onPreExecute() {
@@ -439,7 +467,8 @@ public class CardPlayerFragment extends AbsPlayerFragment implements PlayerAlbum
 
     private void resetToCurrentPosition() {
         recyclerView.stopScroll();
-        layoutManager.scrollToPositionWithOffset(MusicPlayerRemote.getPosition() + 1, 0);
+        // TODO: 12/05/2018 calculate position
+        layoutManager.scrollToPositionWithOffset(/*MusicPlayerRemote.getPosition()*/ 0 + 1, 0);
     }
 
     interface Impl {

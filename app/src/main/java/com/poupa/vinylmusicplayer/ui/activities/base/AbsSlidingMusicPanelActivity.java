@@ -9,6 +9,7 @@ import android.support.annotation.ColorInt;
 import android.support.annotation.FloatRange;
 import android.support.annotation.LayoutRes;
 import android.support.v4.app.Fragment;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -27,6 +28,8 @@ import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+
+import java.util.List;
 
 /**
  * @author Karim Abou Zeid (kabouzeid)
@@ -124,9 +127,9 @@ public abstract class AbsSlidingMusicPanelActivity extends AbsMusicServiceActivi
     }
 
     @Override
-    public void onQueueChanged() {
-        super.onQueueChanged();
-        hideBottomBar(MusicPlayerRemote.getPlayingQueue().isEmpty());
+    public void onQueueChanged(List<MediaSessionCompat.QueueItem> queue) {
+        super.onQueueChanged(queue);
+        hideBottomBar(queue.isEmpty());
     }
 
     @Override
