@@ -85,7 +85,7 @@ public class MiniPlayerFragment extends AbsMusicServiceFragment implements Music
         miniPlayerPlayPauseDrawable = new PlayPauseDrawable(getActivity());
         miniPlayerPlayPauseButton.setImageDrawable(miniPlayerPlayPauseDrawable);
         miniPlayerPlayPauseButton.setColorFilter(ATHUtil.resolveColor(getActivity(), R.attr.iconColor, ThemeStore.textColorSecondary(getActivity())), PorterDuff.Mode.SRC_IN);
-        miniPlayerPlayPauseButton.setOnClickListener(new PlayPauseButtonOnClickHandler());
+        miniPlayerPlayPauseButton.setOnClickListener(v -> PlayPauseButtonOnClickHandler.handle(mediaController));
     }
 
     private void updateSongTitle(@Nullable MediaMetadataCompat metadata) {

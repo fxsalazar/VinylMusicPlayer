@@ -157,7 +157,7 @@ public class CardPlayerPlaybackControlsFragment extends AbsMusicServiceFragment 
 
         playPauseFab.setImageDrawable(playerFabPlayPauseDrawable); // Note: set the drawable AFTER TintHelper.setTintAuto() was called
         playPauseFab.setColorFilter(MaterialValueHelper.getPrimaryTextColor(getContext(), ColorUtil.isColorLight(fabColor)), PorterDuff.Mode.SRC_IN);
-        playPauseFab.setOnClickListener(new PlayPauseButtonOnClickHandler());
+        playPauseFab.setOnClickListener(v -> PlayPauseButtonOnClickHandler.handle(mediaController));
         playPauseFab.post(() -> {
             if (playPauseFab != null) {
                 playPauseFab.setPivotX(playPauseFab.getWidth() / 2);

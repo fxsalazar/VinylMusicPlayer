@@ -20,7 +20,7 @@ import io.reactivex.processors.BehaviorProcessor;
  * 01/02/2018.
  */
 
-public final class DefaultAudioPlaybackController extends DefaultPlaybackController {
+final class DefaultAudioPlaybackController extends DefaultPlaybackController {
 
     private static final String TAG = LogHelper.makeLogTag(DefaultPlaybackController.class);
     private final AudioFocusManager audioFocusManager;
@@ -30,17 +30,8 @@ public final class DefaultAudioPlaybackController extends DefaultPlaybackControl
     private final MediaBrowserServiceCompat service;
     private final MediaSessionCompat mediaSession;
     private final MediaNotificationManager mediaNotificationManager;
-    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-    private final BehaviorProcessor<PlaybackStateCompat> playbackStateProcessor = BehaviorProcessor.create();
-    private final MediaControllerCompat.Callback callback = new MediaControllerCompat.Callback() {
-        @Override
-        public void onPlaybackStateChanged(PlaybackStateCompat state) {
-            Log.w(TAG, "onPlaybackStateChanged: " + PlaybackStateCompatExtension.getReadableState(state));
-            playbackStateProcessor.onNext(state);
-        }
-    };
 
-    public DefaultAudioPlaybackController(
+    DefaultAudioPlaybackController(
             @NonNull MediaBrowserServiceCompat service,
             @NonNull MediaSessionCompat mediaSession,
             @NonNull MediaNotificationManager mediaNotificationManager,
@@ -74,7 +65,6 @@ public final class DefaultAudioPlaybackController extends DefaultPlaybackControl
 
     @Override
     public void onPlay(Player player) {
-        Log.e(TAG, "onPlay: ");
         int audioFocus = audioFocusManager.getAudioFocus();
         switch (audioFocus) {
             case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
@@ -84,19 +74,10 @@ public final class DefaultAudioPlaybackController extends DefaultPlaybackControl
             case AudioManager.AUDIOFOCUS_REQUEST_GRANTED:
                 MediaControllerCompat controller = mediaSession.getController();
                 if (controller.getPlaybackState().getState() == PlaybackStateCompat.STATE_NONE) {
-                    controller.registerCallback(callback);
                     // Prepare the first Item on the queue if any
                     controller.getTransportControls().skipToNext();
-                    compositeDisposable.add(playbackStateProcessor
-                            .filter(playbackStateCompat -> playbackStateCompat.getState() == PlaybackStateCompat.STATE_PAUSED)
-                            .firstElement()
-                            .subscribe(playbackState -> {
-                                play(player);
-                                controller.unregisterCallback(callback);
-                            }));
-                } else {
-                    play(player);
                 }
+                play(player);
                 break;
             case AudioManager.AUDIOFOCUS_REQUEST_DELAYED:
                 // TODO: 04/02/2018 Maybe show a message
@@ -138,10 +119,6 @@ public final class DefaultAudioPlaybackController extends DefaultPlaybackControl
             dontBeNoisyBroadcastReceiver.unregisterBroadcast(service);
             // stop notification foreground
             mediaNotificationManager.stopNotification();
-
-            // local stuff
-            mediaSession.getController().unregisterCallback(callback);
-            compositeDisposable.clear();
         }
     }
 

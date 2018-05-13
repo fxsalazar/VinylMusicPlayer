@@ -44,6 +44,10 @@ public abstract class AbsMusicServiceFragment extends Fragment implements MediaM
         super.onViewCreated(view, savedInstanceState);
         activity.addMusicServiceEventListener(this);
         this.musicServiceCallback = registerMusicServiceCallback();
+        mediaController = MediaControllerCompat.getMediaController(activity);
+        if (mediaController != null){
+            mediaController.registerCallback(musicServiceCallback);
+        }
     }
 
     @NonNull
@@ -53,6 +57,7 @@ public abstract class AbsMusicServiceFragment extends Fragment implements MediaM
     public void onDestroyView() {
         super.onDestroyView();
         mediaController.unregisterCallback(musicServiceCallback);
+        activity.removeMusicServiceEventListener(this);
     }
 
     @Override

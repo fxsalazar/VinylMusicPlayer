@@ -161,7 +161,7 @@ public class FlatPlayerPlaybackControlsFragment extends AbsMusicServiceFragment 
         playPauseDrawable = new PlayPauseDrawable(getActivity());
         playPauseButton.setImageDrawable(playPauseDrawable);
         updatePlayPauseColor();
-        playPauseButton.setOnClickListener(new PlayPauseButtonOnClickHandler());
+        playPauseButton.setOnClickListener(v -> PlayPauseButtonOnClickHandler.handle(mediaController));
         playPauseButton.post(() -> {
             if (playPauseButton != null) {
                 playPauseButton.setPivotX(playPauseButton.getWidth() / 2);
